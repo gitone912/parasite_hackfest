@@ -1,0 +1,115 @@
+{% extends 'home.html' %}
+{% block title %}Create Survey{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col items-start justify-between pb-6 space-y-4 border-b lg:items-center lg:space-y-0 lg:flex-row">
+        <h1 class="text-2xl font-semibold whitespace-nowrap">Create New Survey</h1>
+    </div>
+    <div class="mt-6">
+        <form method="POST" class="space-y-6" id="surveyForm">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Survey Title</label>
+                    <input type="text" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+
+            <div id="questions" class="space-y-6">
+                <!-- Questions will be added here dynamically -->
+            </div>
+
+            <div class="flex justify-between items-center mt-6">
+                <button type="button" onclick="addQuestion()" class="bg-green-500 text-white px-4 py-2 rounded-md">
+                    Add Question
+                </button>
+                <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-md">
+                    Save Survey
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal for Email List -->
+    <div id="emailModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Send Survey</h3>
+                <form method="POST" action="{% url 'send_survey' %}" enctype="multipart/form-data" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="survey_id" id="modalSurveyId">
+                    <div class="mt-2">
+                        <label class="block text-sm font-medium text-gray-700">Upload Email List (Excel)</label>
+                        <input type="file" name="email_file" accept=".xlsx,.xls,.csv" required class="mt-1 block w-full">
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button type="button" onclick="closeModal()" class="mr-2 px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let questionCount = 0;
+
+function addQuestion() {
+    questionCount++;
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'border p-4 rounded-md';
+    questionDiv.innerHTML = `
+        <div class="space-y-4">
+            <div class="flex justify-between">
+                <h3 class="text-lg font-medium">Question ${questionCount}</h3>
+                <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-500">Remove</button>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Question Text</label>
+                <input type="text" name="questions[${questionCount}][text]" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Question Type</label>
+                <select name="questions[${questionCount}][type]" onchange="toggleChoices(this)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="text">Text Input</option>
+                    <option value="number">Number Input</option>
+                    <option value="choice">Multiple Choice</option>
+                    <option value="checkbox">Checkbox</option>
+                </select>
+            </div>
+            <div class="choices-input hidden">
+                <label class="block text-sm font-medium text-gray-700">Choices (comma-separated)</label>
+                <input type="text" name="questions[${questionCount}][choices]" placeholder="Option 1, Option 2, Option 3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    <input type="checkbox" name="questions[${questionCount}][required]" class="rounded border-gray-300 text-indigo-600 shadow-sm">
+                    Required
+                </label>
+            </div>
+        </div>
+    `;
+    document.getElementById('questions').appendChild(questionDiv);
+}
+
+function toggleChoices(select) {
+    const choicesDiv = select.parentElement.nextElementSibling;
+    choicesDiv.className = select.value === 'choice' || select.value === 'checkbox' ? 'choices-input' : 'choices-input hidden';
+}
+
+function showEmailModal(surveyId) {
+    document.getElementById('modalSurveyId').value = surveyId;
+    document.getElementById('emailModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('emailModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
