@@ -25,4 +25,8 @@ urlpatterns = [
     path('send-survey/', views.send_survey, name='send_survey'),
     path('survey/<uuid:unique_link>/', views.fill_survey, name='fill_survey'),
     path('submit-survey/<uuid:unique_link>/', views.submit_survey, name='submit_survey'),
+    path('create-event/', views.create_event, name='create_event'),
+    path('edit-event/<int:event_id>/', views.edit_event, name='edit_event'),
+    path('delete-event/<int:event_id>/', views.delete_event, name='delete_event'),
+    path('extract-feedback',views.extract_feedbacks,name='extract_feedback')
 ]

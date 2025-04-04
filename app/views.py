@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from .models import Survey, Question, SurveyLink, Response
+from .models import Survey, Question, SurveyLink, Response, Event
 import pandas as pd
 from django.core.mail import send_mail
 from django.conf import settings
@@ -13,13 +13,14 @@ import json
 # Create your views here.
 def home(request):
     if request.user.is_authenticated:
-        return render(request, "dashboard.html")
+        return redirect('dashboard')
     return redirect('login')
 
 @login_required(login_url='/login')
 def dashboard(request):
     surveys = Survey.objects.filter(created_by=request.user).order_by('-created_at')
-    return render(request, "dashboard.html", {'surveys': surveys})
+    events = Event.objects.filter(created_by=request.user).order_by('-date', '-time')
+    return render(request, "dashboard.html", {'surveys': surveys, 'events': events})
 
 @login_required(login_url='/login')
 def create_survey(request):
@@ -185,6 +186,72 @@ def submit_survey(request, unique_link):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+@login_required(login_url='/login')
+def create_event(request):
+    if request.method == 'POST':
+        try:
+            event = Event.objects.create(
+                title=request.POST['title'],
+                description=request.POST['description'],
+                event_type=request.POST['event_type'],
+                date=request.POST['date'],
+                time=request.POST['time'],
+                capacity=request.POST['capacity'],
+                created_by=request.user
+            )
+            
+            # Add location or meeting link based on event type
+            if request.POST['event_type'] == 'offline':
+                event.location = request.POST['location']
+            else:
+                event.meeting_link = request.POST['meeting_link']
+            
+            event.save()
+            messages.success(request, 'Event created successfully!')
+            return redirect('dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating event: {str(e)}')
+            return render(request, "create_event.html")
+
+    return render(request, "create_event.html")
+
+@login_required(login_url='/login')
+def edit_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id, created_by=request.user)
+    
+    if request.method == 'POST':
+        try:
+            event.title = request.POST['title']
+            event.description = request.POST['description']
+            event.event_type = request.POST['event_type']
+            event.date = request.POST['date']
+            event.time = request.POST['time']
+            event.capacity = request.POST['capacity']
+            
+            if request.POST['event_type'] == 'offline':
+                event.location = request.POST['location']
+                event.meeting_link = None
+            else:
+                event.meeting_link = request.POST['meeting_link']
+                event.location = None
+            
+            event.save()
+            messages.success(request, 'Event updated successfully!')
+            return redirect('dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating event: {str(e)}')
+    
+    return render(request, "edit_event.html", {'event': event})
+
+@login_required(login_url='/login')
+def delete_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id, created_by=request.user)
+    event.delete()
+    messages.success(request, 'Event deleted successfully!')
+    return redirect('dashboard')
+
 def Register(request):
     if request.method != "POST":
         return render(request, "register.html")
@@ -216,13 +283,17 @@ def Login(request):
     if user is not None:
         login(request, user)
         messages.success(request, "Successfully Logged In")
-        return render(request ,'after_login.html')
+        return redirect('dashboard')
     else:
         messages.error(request, "Invalid Credentials")
-    return render(request ,'after_login.html')
-
+    return render(request, 'login.html')
 
 def Logout(request):
     logout(request)
     messages.success(request, "Successfully logged out")
     return redirect('/login')
+
+
+
+def extract_feedbacks(request):
+    return render(request,'extract_feedback.html')

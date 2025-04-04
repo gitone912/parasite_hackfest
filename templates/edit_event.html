@@ -1,0 +1,95 @@
+{% extends 'home.html' %}
+{% block title %}Edit Event - SmartEvent Management System{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col items-start justify-between pb-6 space-y-4 border-b lg:items-center lg:space-y-0 lg:flex-row">
+        <h1 class="text-2xl font-semibold whitespace-nowrap">Edit Event</h1>
+    </div>
+
+    <form method="POST" class="max-w-2xl mx-auto mt-6 space-y-6">
+        {% csrf_token %}
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Event Title</label>
+                <input type="text" name="title" required value="{{ event.title }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" rows="4" 
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ event.description }}</textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Event Type</label>
+                <select name="event_type" id="eventType" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="online" {% if event.event_type == 'online' %}selected{% endif %}>Online Event</option>
+                    <option value="offline" {% if event.event_type == 'offline' %}selected{% endif %}>Offline Event</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" name="date" required value="{{ event.date|date:'Y-m-d' }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Time</label>
+                <input type="time" name="time" required value="{{ event.time|time:'H:i' }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div id="locationField" class="{% if event.event_type != 'offline' %}hidden{% endif %}">
+                <label class="block text-sm font-medium text-gray-700">Location</label>
+                <input type="text" name="location" value="{{ event.location }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div id="meetingLinkField" class="{% if event.event_type != 'online' %}hidden{% endif %}">
+                <label class="block text-sm font-medium text-gray-700">Meeting Link</label>
+                <input type="url" name="meeting_link" value="{{ event.meeting_link }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Capacity</label>
+                <input type="number" name="capacity" required min="1" value="{{ event.capacity }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'dashboard' %}" class="px-6 py-2 text-gray-600 hover:text-gray-800">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
+                Update Event
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('eventType').addEventListener('change', function() {
+    const locationField = document.getElementById('locationField');
+    const meetingLinkField = document.getElementById('meetingLinkField');
+    
+    if (this.value === 'offline') {
+        locationField.classList.remove('hidden');
+        meetingLinkField.classList.add('hidden');
+        locationField.querySelector('input').required = true;
+        meetingLinkField.querySelector('input').required = false;
+    } else if (this.value === 'online') {
+        meetingLinkField.classList.remove('hidden');
+        locationField.classList.add('hidden');
+        meetingLinkField.querySelector('input').required = true;
+        locationField.querySelector('input').required = false;
+    }
+});
+</script>
+{% endblock %}

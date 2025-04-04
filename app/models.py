@@ -45,3 +45,23 @@ class Response(models.Model):
 
     def __str__(self):
         return f"Response to {self.question.question_text}"
+
+class Event(models.Model):
+    EVENT_TYPES = (
+        ('online', 'Online Event'),
+        ('offline', 'Offline Event'),
+    )
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    event_type = models.CharField(max_length=10, choices=EVENT_TYPES)
+    date = models.DateField()
+    time = models.TimeField()
+    location = models.CharField(max_length=200, blank=True, null=True)  # For offline events
+    meeting_link = models.URLField(blank=True, null=True)  # For online events
+    capacity = models.IntegerField()
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.title
