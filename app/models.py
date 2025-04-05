@@ -51,8 +51,13 @@ class Event(models.Model):
         ('online', 'Online Event'),
         ('offline', 'Offline Event'),
     )
+    EVENT_TYPES = (
+        ('Evo', 'BasicBot'),
+        ('EvoPro', 'AdvanceBot'),
+    )
     
     title = models.CharField(max_length=200)
+    bot = models.CharField(max_length=10, choices=EVENT_TYPES,null=True,blank=True)
     description = models.TextField()
     event_type = models.CharField(max_length=10, choices=EVENT_TYPES)
     date = models.DateField()

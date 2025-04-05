@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot - Your Smart Event Organizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+    <!-- Hero Section -->
+    <header class="gradient-bg text-white">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-robot text-2xl mr-2"></i>
+                <span class="font-bold text-xl">EventBot</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#features" class="hover:text-gray-200">Features</a>
+                <a href="#how-it-works" class="hover:text-gray-200">How It Works</a>
+                <a href="#testimonials" class="hover:text-gray-200">Testimonials</a>
+                <a href="#pricing" class="hover:text-gray-200">Pricing</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/login" class="px-4 py-2 rounded hover:bg-white hover:text-blue-600 border border-white transition">Login</a>
+                <a href="/register" class="px-4 py-2 bg-white text-blue-600 rounded hover:bg-gray-100 transition">Sign Up</a>
+            </div>
+        </nav>
+        
+        <div class="container mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-16 md:mb-0">
+                <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6">Organize Events Smarter with AI-Powered Assistance</h1>
+                <p class="text-xl mb-8">Create surveys, manage events, analyze feedback, and engage attendees - all in one platform powered by intelligent automation.</p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="/register" class="px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-gray-100 transition text-center">Get Started</a>
+                    <a href="#demo" class="px-8 py-3 border border-white rounded-lg hover:bg-white hover:text-blue-600 transition text-center">Watch Demo</a>
+                </div>
+            </div>
+            <div class="md:w-1/2 flex justify-center">
+                <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="EventBot Dashboard Preview" class="rounded-lg shadow-xl"/>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">Powerful Features</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Everything you need to create successful events and gather meaningful insights.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Survey Creation -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-poll text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Custom Surveys</h3>
+                    <p class="text-gray-600">Create and distribute customized surveys to gather feedback before, during, and after your events.</p>
+                </div>
+                
+                <!-- Event Management -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-calendar-check text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Event Management</h3>
+                    <p class="text-gray-600">Easily create and manage both online and offline events with customizable capacity and details.</p>
+                </div>
+                
+                <!-- Feedback Collection -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-comments text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Social Feedback</h3>
+                    <p class="text-gray-600">Automatically collect and analyze social media feedback related to your events.</p>
+                </div>
+                
+                <!-- Sentiment Analysis -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-chart-line text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Sentiment Analysis</h3>
+                    <p class="text-gray-600">Leverage AI to analyze feedback sentiment and gain actionable insights from your attendees.</p>
+                </div>
+                
+                <!-- WhatsApp Bot -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fab fa-whatsapp text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">WhatsApp Auto Bot</h3>
+                    <p class="text-gray-600">Engage with attendees through automated WhatsApp notifications, reminders, and interactive responses.</p>
+                </div>
+                
+                <!-- Meeting Analytics -->
+                <div class="bg-white rounded-lg p-8 shadow-md transition duration-300 feature-card">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-file-alt text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Auto-Analyzed Reports</h3>
+                    <p class="text-gray-600">Get comprehensive, AI-generated reports from your virtual meetings with key insights and action items.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">How It Works</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Get started in minutes and leverage the power of automation for your events.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                    <h3 class="text-xl font-bold mb-2">Create Account</h3>
+                    <p class="text-gray-600">Sign up for a free account to access all features.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                    <h3 class="text-xl font-bold mb-2">Design Your Event</h3>
+                    <p class="text-gray-600">Set up your event details, surveys, and communication preferences.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                    <h3 class="text-xl font-bold mb-2">Engage Attendees</h3>
+                    <p class="text-gray-600">Use automated tools to connect with participants before, during, and after.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                    <h3 class="text-xl font-bold mb-2">Analyze Results</h3>
+                    <p class="text-gray-600">Get actionable insights from AI-powered analytics and reports.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-10 md:mb-0 md:pr-10">
+                    <h2 class="text-3xl font-bold mb-6">See EventBot in Action</h2>
+                    <p class="text-xl text-gray-600 mb-6">Watch how our platform simplifies event management and helps you gather valuable insights from your attendees.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Create surveys and events in minutes</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Automatically collect and analyze feedback</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Engage attendees with WhatsApp automation</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Generate comprehensive event reports</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="md:w-1/2 bg-gray-800 rounded-lg shadow-xl p-2">
+                    <div class="aspect-w-16 aspect-h-9">
+                        <img src="/api/placeholder/640/360" alt="EventBot Demo Video Placeholder" class="rounded"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+
+    <!-- CTA Section -->
+    <section class="py-20 gradient-bg text-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold mb-6">Ready to transform your event management?</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Join thousands of event organizers who use EventBot to create memorable experiences and gather meaningful insights.</p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="/register" class="px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-gray-100 transition">Get Started for Free</a>
+               
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-robot text-2xl mr-2"></i>
+                        <span class="font-bold text-xl">EventBot</span>
+                    </div>
+                    <p class="text-gray-400">Your AI-powered event management assistant that helps you create memorable experiences.</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Product</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#features" class="text-gray-400 hover:text-white">Features</a></li>
+                        <li><a href="#pricing" class="text-gray-400 hover:text-white">Pricing</a></li>
+                        <li><a href="/integrations" class="text-gray-400 hover:text-white">Integrations</a></li>
+                        <li><a href="/roadmap" class="text-gray-400 hover:text-white">Roadmap</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Resources</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/blog" class="text-gray-400 hover:text-white">Blog</a></li>
+                        <li><a href="/documentation" class="text-gray-400 hover:text-white">Documentation</a></li>
+                        <li><a href="/api" class="text-gray-400 hover:text-white">API</a></li>
+                        <li><a href="/support" class="text-gray-400 hover:text-white">Support</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Company</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/about" class="text-gray-400 hover:text-white">About Us</a></li>
+                        <li><a href="/careers" class="text-gray-400 hover:text-white">Careers</a></li>
+                        <li><a href="/privacy" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                        <li><a href="/terms" class="text-gray-400 hover:text-white">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400">© 2025 EventBot. All rights reserved.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple scroll functionality for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

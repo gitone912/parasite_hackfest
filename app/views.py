@@ -15,7 +15,10 @@ import requests
 def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
-    return redirect('login')
+    return render(request,'homepage.html')
+
+def homepage(request):
+    return render(request,'homepage.html')
 
 @login_required(login_url='/login')
 def dashboard(request):
@@ -58,10 +61,7 @@ def create_survey(request):
                 )
 
             messages.success(request, 'Survey created successfully!')
-            return JsonResponse({
-                'status': 'success',
-                'survey_id': survey.id
-            })
+            return redirect('dashboard')
         except Exception as e:
             messages.error(request, f'Error creating survey: {str(e)}')
             return JsonResponse({
@@ -198,6 +198,7 @@ def create_event(request):
                 date=request.POST['date'],
                 time=request.POST['time'],
                 capacity=request.POST['capacity'],
+                bot=request.POST['bot'],
                 created_by=request.user
             )
             
@@ -284,7 +285,7 @@ def Login(request):
     if user is not None:
         login(request, user)
         messages.success(request, "Successfully Logged In")
-        return redirect('dashboard')
+        return redirect('create_event')
     else:
         messages.error(request, "Invalid Credentials")
     return render(request, 'login.html')
