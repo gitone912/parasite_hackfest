@@ -65,3 +65,14 @@ class Event(models.Model):
     
     def __str__(self):
         return self.title
+
+class Feedback(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tag = models.CharField(max_length=200)
+    feedback_data = models.JSONField()
+    search_date = models.DateTimeField(auto_now_add=True)
+    analyzed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Feedback for {self.tag} by {self.user.username}"

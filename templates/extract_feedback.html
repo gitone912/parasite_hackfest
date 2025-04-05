@@ -9,6 +9,16 @@
         {% csrf_token %}
         <div class="flex gap-4">
             <div class="flex-1">
+                <select name="event_id" class="w-full p-2 border rounded">
+                    <option value="">Select Event (Optional)</option>
+                    {% for event in events %}
+                        <option value="{{ event.id }}" {% if event_id == event.id %}selected{% endif %}>
+                            {{ event.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1">
                 <input type="text" name="search_term" placeholder="Enter search term (e.g. @openai)" 
                     class="w-full p-2 border rounded" value="{{ search_term|default:'@openai' }}">
             </div>
@@ -23,21 +33,67 @@
     </form>
 
     {% if tweets %}
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for tweet in tweets %}
-        <div class="bg-white p-4 rounded-lg shadow">
-            <div class="font-semibold text-blue-600 mb-2">{{ tweet.username }}</div>
-            <p class="text-gray-700 mb-3">{{ tweet.tweet_text }}</p>
-            <div class="text-sm text-gray-500">
-                {{ tweet.timestamp|date:"M d, Y H:i" }}
-            </div>
-        </div>
-        {% endfor %}
+    <div class="flex justify-end mb-4">
+        <form method="POST" action="{% url 'save_feedback' %}">
+            {% csrf_token %}
+            <input type="hidden" name="tweets_data" value="{{ tweets_json }}">
+            <input type="hidden" name="search_term" value="{{ search_term }}">
+            <input type="hidden" name="event_id" value="{{ event_id }}">
+            <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                Save and Analyze Feedback
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metrics</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for tweet in tweets %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <div class="text-sm font-medium text-gray-900">{{ tweet.username }}</div>
+                            <div class="text-sm text-gray-500">{{ tweet.handle }}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 whitespace-pre-wrap">{{ tweet.content }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ tweet.timestamp }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-4 text-sm text-gray-500">
+                            <span title="Likes" class="flex items-center">
+                                <i class="fas fa-heart text-red-500 mr-1"></i> {{ tweet.likes }}
+                            </span>
+                            <span title="Retweets" class="flex items-center">
+                                <i class="fas fa-retweet text-green-500 mr-1"></i> {{ tweet.retweets }}
+                            </span>
+                            <span title="Replies" class="flex items-center">
+                                <i class="fas fa-reply text-blue-500 mr-1"></i> {{ tweet.replies }}
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <div class="mt-8">
-        <h3 class="text-lg font-semibold mb-2">Raw JSON Data:</h3>
-        <pre class="bg-gray-100 p-4 rounded overflow-x-auto">{{ tweets_json }}</pre>
+        <details class="bg-white rounded-lg shadow overflow-hidden">
+            <summary class="px-4 py-2 bg-gray-50 cursor-pointer font-medium">Raw JSON Data</summary>
+            <pre class="p-4 bg-gray-50 overflow-x-auto text-sm">{{ tweets_json|pprint }}</pre>
+        </details>
     </div>
     {% endif %}
 </div>

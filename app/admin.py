@@ -5,3 +5,4 @@ from .models import *
 admin.site.register(Survey)
 admin.site.register(SurveyLink)
 admin.site.register(Response)
+admin.site.register(Feedback)

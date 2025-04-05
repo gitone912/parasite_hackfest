@@ -20,7 +20,7 @@
 </head>
 <body>
     <div x-data="setup()">
-        <div class="flex h-screen overflow-y-hidden bg-white">
+        <div class="flex h-screen antialiased">
             <!-- Sidebar backdrop -->
             <div x-show.in.out.opacity="isSidebarOpen" class="fixed inset-0 z-10 bg-black bg-opacity-20 lg:hidden"
                 style="backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px)"></div>
@@ -136,7 +136,7 @@
                 </div>
             </aside>
             
-            <div class="flex flex-col flex-1 h-full overflow-hidden">
+            <div class="flex flex-col flex-1 w-full overflow-x-hidden">
                 <!-- Navbar -->
                 <header class="flex-shrink-0 border-b">
                     <div class="flex items-center justify-between p-2">
@@ -177,18 +177,20 @@
                 </header>
                 
                 <!-- Main content -->
-                <main class="flex-1 max-h-full p-5 overflow-hidden overflow-y-scroll">
-                    {% if messages %}
-                    <div class="messages mb-4">
-                        {% for message in messages %}
-                        <div class="p-4 mb-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                            {{ message }}
+                <main class="flex-1 overflow-y-auto">
+                    <div class="container mx-auto px-6 py-8">
+                        {% if messages %}
+                        <div class="messages mb-4">
+                            {% for message in messages %}
+                            <div class="p-4 mb-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                        {% endif %}
+                        
+                        {% block body %}{% endblock body %}
                     </div>
-                    {% endif %}
-                    
-                    {% block body %}{% endblock body %}
                 </main>
             </div>
         </div>

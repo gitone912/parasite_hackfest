@@ -28,5 +28,9 @@ urlpatterns = [
     path('create-event/', views.create_event, name='create_event'),
     path('edit-event/<int:event_id>/', views.edit_event, name='edit_event'),
     path('delete-event/<int:event_id>/', views.delete_event, name='delete_event'),
-    path('extract-feedback',views.extract_feedbacks,name='extract_feedback')
+    path('extract-feedback',views.extract_feedbacks,name='extract_feedback'),
+    path('save-feedback/', views.save_feedback, name='save_feedback'),
+    path('analyze-sentiment/<int:feedback_id>/', views.analyze_sentiment, name='analyze_sentiment'),
+    path('perform_sentiment_analysis/<int:feedback_id>/', views.perform_sentiment_analysis, name='perform_sentiment_analysis'),
+
 ]

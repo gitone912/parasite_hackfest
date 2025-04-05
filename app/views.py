@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from .models import Survey, Question, SurveyLink, Response, Event
+from .models import Feedback, Survey, Question, SurveyLink, Response, Event
 import pandas as pd
 from django.core.mail import send_mail
 from django.conf import settings
@@ -294,35 +294,183 @@ def Logout(request):
     messages.success(request, "Successfully logged out")
     return redirect('/login')
 
+@login_required(login_url='/login')
 def extract_feedbacks(request):
+    events = Event.objects.filter(created_by=request.user)
+    
     if request.method == 'POST':
         search_term = request.POST.get('search_term', '@openai')
         max_tweets = int(request.POST.get('max_tweets', 10))
+        event_id = request.POST.get('event_id')
+        
+        event = None
+        if event_id:
+            event = get_object_or_404(Event, id=event_id, created_by=request.user)
         
         # API endpoint
-        print('applyning')
-        api_url = 'http://192.168.92.100/tweets'
+        api_url = 'http://192.168.92.100:8080/dummytweets'
         
         # Prepare payload
         payload = {
             "search_term": search_term,
             "max_tweets": max_tweets,
-            "username": "parasite418758",
-            "password": "makemecrazy05"   
+            "username": "Gamma231192",
+            "password": "sachin03.k"   
         }
         
         try:
             response = requests.post(api_url, json=payload)
             response.raise_for_status()
-            tweets = response.json()
+            response_data = response.json()
+            tweets = response_data.get('tweets', [])  # 
             
+            # Save all tweets as a single feedback entry
+            Feedback.objects.create(
+                event=event,
+                user=request.user,
+                tag=search_term,
+                feedback_data=tweets
+            )
+            
+            messages.success(request, f'Successfully saved {len(tweets)} feedback items')
             return render(request, 'extract_feedback.html', {
-                'tweets': tweets,
-                'search_term': search_term,
-                'tweets_json': json.dumps(tweets, indent=2)
-            })
+    'tweets': tweets,
+    'search_term': search_term,
+    'tweets_json': json.dumps(response_data, indent=2),  # Keep the original structure for JSON display
+    'events': events,
+    'event_id': event_id
+})
         except requests.exceptions.RequestException as e:
             messages.error(request, f"API Error: {str(e)}")
-            return render(request, 'extract_feedback.html', {'error': str(e)})
+            return render(request, 'extract_feedback.html', {'error': str(e), 'events': events})
             
-    return render(request, 'extract_feedback.html')
+    return render(request, 'extract_feedback.html', {'events': events})
+
+@login_required(login_url='/login')
+def save_feedback(request):
+    if request.method == 'POST':
+        tweets_data = request.POST.get('tweets_data')
+        search_term = request.POST.get('search_term')
+        event_id = request.POST.get('event_id')
+        
+        event = None
+        if event_id and event_id.isdigit():  # Check if event_id is valid
+            event = get_object_or_404(Event, id=int(event_id), created_by=request.user)
+        
+        try:
+            # Save feedback
+            feedback = Feedback.objects.create(
+                event=event,
+                user=request.user,
+                tag=search_term,
+                feedback_data=json.loads(tweets_data)
+            )
+            
+            return redirect('analyze_sentiment', feedback_id=feedback.id)
+        except Exception as e:
+            messages.error(request, f"Error saving feedback: {str(e)}")
+            return redirect('extract_feedback')
+    
+    return redirect('extract_feedbacks')
+
+@login_required(login_url='/login')
+def analyze_sentiment(request, feedback_id):
+    feedback = get_object_or_404(Feedback, id=feedback_id, user=request.user)
+    tweets = feedback.feedback_data
+    
+    # Check if 'tweets' is a dictionary with a 'tweets' key (based on your data structure)
+    if isinstance(tweets, dict) and 'tweets' in tweets:
+        tweets = tweets['tweets']
+    
+    # The actual sentiment analysis will be done via AJAX to show loading screen
+    # Just pass the raw tweets to the template
+    
+    return render(request, 'analyse_sentiment.html', {
+        'feedback': feedback,
+        'tweets': tweets,
+        'feedback_id': feedback_id
+    })
+
+@login_required(login_url='/login')
+def perform_sentiment_analysis(request, feedback_id):
+    """API endpoint that performs the actual sentiment analysis"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    feedback = get_object_or_404(Feedback, id=feedback_id, user=request.user)
+    tweets_data = feedback.feedback_data
+    
+    # Check if 'tweets' is a dictionary with a 'tweets' key (based on your data structure)
+    if isinstance(tweets_data, dict) and 'tweets' in tweets_data:
+        tweets = tweets_data['tweets']
+    else:
+        tweets = tweets_data
+    
+    try:
+        # Import required libraries
+        import pickle
+        import re
+        import os
+        from tensorflow.keras.models import load_model
+        from tensorflow.keras.preprocessing.sequence import pad_sequences
+        import numpy as np
+        
+        # Get the absolute path to the model files
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        model_path = os.path.join(BASE_DIR, 'ml_models', 'sentiment_model.h5')
+        tokenizer_path = os.path.join(BASE_DIR, 'ml_models', 'tokenizer.pkl')
+        
+        # Load the saved model and tokenizer
+        model = load_model(model_path)
+        with open(tokenizer_path, "rb") as f:
+            tokenizer = pickle.load(f)
+        
+        # Define cleaning function
+        def clean_tweet(tweet):
+            tweet = re.sub(r'http\S+|www\S+|https\S+', '', tweet, flags=re.MULTILINE)
+            tweet = re.sub(r'\@\w+|\#','', tweet)
+            tweet = re.sub(r'\W', ' ', tweet)
+            tweet = re.sub(r'\d', ' ', tweet)
+            tweet = re.sub(r'\s+', ' ', tweet)
+            tweet = tweet.strip()
+            return tweet
+        
+        # Extract content from tweets
+        tweet_contents = [tweet['content'] for tweet in tweets]
+        
+        # Clean and preprocess
+        cleaned_tweets = [clean_tweet(tweet.lower()) for tweet in tweet_contents]
+        sequences = tokenizer.texts_to_sequences(cleaned_tweets)
+        
+        # Use the same maxlen from training
+        maxlen = 56  # Replace with your actual maxlen value if different
+        padded_sequences = pad_sequences(sequences, maxlen=maxlen, padding='post')
+        
+        # Predict
+        predictions = model.predict(padded_sequences)
+        
+        # Decode predictions
+        label_map = {0: 'Negative', 1: 'Neutral', 2: 'Positive', 3: 'Irrelevant', 4: 'Mixed'}
+        
+        # Combine predictions with original tweets
+        results = []
+        for i, tweet in enumerate(tweets):
+            sentiment = label_map[np.argmax(predictions[i])]
+            confidence = float(np.max(predictions[i]))  # Convert numpy float to Python float for JSON serialization
+            
+            tweet_with_sentiment = tweet.copy()
+            tweet_with_sentiment['sentiment'] = sentiment
+            tweet_with_sentiment['confidence'] = confidence
+            results.append(tweet_with_sentiment)
+        
+        # Update the feedback object with analysis results
+        feedback.analyzed_data = results
+        feedback.is_analyzed = True
+        feedback.save()
+        
+        return JsonResponse({'status': 'success', 'results': results})
+        
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'status': 'error', 'message': str(e)})

@@ -1,0 +1,203 @@
+{% extends 'home.html' %}
+{% block title %}Sentiment Analysis - SmartEvent Management System{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-6">Sentiment Analysis</h1>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto mb-4"></div>
+            <h3 class="text-xl font-medium">Analyzing sentiment...</h3>
+            <p class="text-gray-600 mt-2">This may take a few moments.</p>
+        </div>
+    </div>
+    
+    <!-- Results section (initially hidden) -->
+    <div id="results-container" class="hidden">
+        <div class="mb-6 flex justify-between items-center">
+            <h2 class="text-xl font-medium">Analysis Results</h2>
+            <div class="flex space-x-4">
+                <span id="positive-count" class="px-4 py-2 bg-green-100 text-green-800 rounded-md">Positive: 0</span>
+                <span id="neutral-count" class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md">Neutral: 0</span>
+                <span id="negative-count" class="px-4 py-2 bg-red-100 text-red-800 rounded-md">Negative: 0</span>
+                <span id="mixed-count" class="px-4 py-2 bg-purple-100 text-purple-800 rounded-md">Mixed: 0</span>
+                <span id="irrelevant-count" class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md">Irrelevant: 0</span>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metrics</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table" class="bg-white divide-y divide-gray-200">
+                    <!-- Results will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Error message (initially hidden) -->
+    <div id="error-container" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-md">
+        <h3 class="font-bold">Error</h3>
+        <p id="error-message"></p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Start sentiment analysis via AJAX
+        analyzeSentiment();
+        
+        function analyzeSentiment() {
+            fetch('{% url "perform_sentiment_analysis" feedback_id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayResults(data.results);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                showError('Failed to analyze sentiment: ' + error.message);
+            })
+            .finally(() => {
+                // Hide loading overlay
+                document.getElementById('loading-overlay').classList.add('hidden');
+            });
+        }
+        
+        function displayResults(results) {
+            const tableBody = document.getElementById('results-table');
+            tableBody.innerHTML = '';
+            
+            // Count sentiments
+            const counts = {
+                'Positive': 0,
+                'Neutral': 0,
+                'Negative': 0,
+                'Mixed': 0,
+                'Irrelevant': 0
+            };
+            
+            results.forEach(tweet => {
+                // Update counts
+                counts[tweet.sentiment] = (counts[tweet.sentiment] || 0) + 1;
+                
+                // Get row background color based on sentiment
+                let bgClass = '';
+                let textClass = '';
+                
+                switch(tweet.sentiment) {
+                    case 'Positive':
+                        bgClass = 'bg-green-50';
+                        break;
+                    case 'Negative':
+                        bgClass = 'bg-red-50';
+                        break;
+                    case 'Neutral':
+                        bgClass = 'bg-gray-50';
+                        break;
+                    case 'Mixed':
+                        bgClass = 'bg-purple-50';
+                        break;
+                    case 'Irrelevant':
+                        bgClass = 'bg-yellow-50';
+                        break;
+                }
+                
+                // Create table row
+                const row = document.createElement('tr');
+                row.className = `hover:bg-gray-100 ${bgClass}`;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <div class="text-sm font-medium text-gray-900">${tweet.username}</div>
+                            <div class="text-sm text-gray-500">${tweet.handle}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 whitespace-pre-wrap">${tweet.content}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${tweet.timestamp}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full font-semibold 
+                            ${getSentimentClass(tweet.sentiment)}">
+                            ${tweet.sentiment} (${Math.round(tweet.confidence * 100)}%)
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex space-x-4 text-sm text-gray-500">
+                            <span title="Likes" class="flex items-center">
+                                <i class="fas fa-heart text-red-500 mr-1"></i> ${tweet.likes}
+                            </span>
+                            <span title="Retweets" class="flex items-center">
+                                <i class="fas fa-retweet text-green-500 mr-1"></i> ${tweet.retweets}
+                            </span>
+                            <span title="Replies" class="flex items-center">
+                                <i class="fas fa-reply text-blue-500 mr-1"></i> ${tweet.replies}
+                            </span>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Update count displays
+            document.getElementById('positive-count').textContent = `Positive: ${counts['Positive']}`;
+            document.getElementById('neutral-count').textContent = `Neutral: ${counts['Neutral']}`;
+            document.getElementById('negative-count').textContent = `Negative: ${counts['Negative']}`;
+            document.getElementById('mixed-count').textContent = `Mixed: ${counts['Mixed']}`;
+            document.getElementById('irrelevant-count').textContent = `Irrelevant: ${counts['Irrelevant']}`;
+            
+            // Show results container
+            document.getElementById('results-container').classList.remove('hidden');
+        }
+        
+        function getSentimentClass(sentiment) {
+            switch(sentiment) {
+                case 'Positive':
+                    return 'bg-green-100 text-green-800';
+                case 'Negative':
+                    return 'bg-red-100 text-red-800';
+                case 'Neutral':
+                    return 'bg-gray-100 text-gray-800';
+                case 'Mixed':
+                    return 'bg-purple-100 text-purple-800';
+                case 'Irrelevant':
+                    return 'bg-yellow-100 text-yellow-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+        
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}
