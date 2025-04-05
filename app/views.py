@@ -480,5 +480,10 @@ def perform_sentiment_analysis(request, feedback_id):
 def crowdDetection(request):
     return render(request, 'crowdDetection.html')
 
+@login_required(login_url='/login')
+def event_details(request, event_id):
+    event = get_object_or_404(Event, id=event_id, created_by=request.user)
+    return render(request, 'event_details.html', {'event': event})
+
 
 

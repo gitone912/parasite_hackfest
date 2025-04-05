@@ -33,5 +33,6 @@ urlpatterns = [
     path('analyze-sentiment/<int:feedback_id>/', views.analyze_sentiment, name='analyze_sentiment'),
     path('perform_sentiment_analysis/<int:feedback_id>/', views.perform_sentiment_analysis, name='perform_sentiment_analysis'),
     path('crowd-detection/', views.crowdDetection, name='crowd_detection'),
+    path('event/<int:event_id>/', views.event_details, name='event_details'),
 
 ]
