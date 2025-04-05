@@ -9,6 +9,7 @@ import pandas as pd
 from django.core.mail import send_mail
 from django.conf import settings
 import json
+import requests
 
 # Create your views here.
 def home(request):
@@ -293,7 +294,35 @@ def Logout(request):
     messages.success(request, "Successfully logged out")
     return redirect('/login')
 
-
-
 def extract_feedbacks(request):
-    return render(request,'extract_feedback.html')
+    if request.method == 'POST':
+        search_term = request.POST.get('search_term', '@openai')
+        max_tweets = int(request.POST.get('max_tweets', 10))
+        
+        # API endpoint
+        print('applyning')
+        api_url = 'http://192.168.92.100/tweets'
+        
+        # Prepare payload
+        payload = {
+            "search_term": search_term,
+            "max_tweets": max_tweets,
+            "username": "parasite418758",
+            "password": "makemecrazy05"   
+        }
+        
+        try:
+            response = requests.post(api_url, json=payload)
+            response.raise_for_status()
+            tweets = response.json()
+            
+            return render(request, 'extract_feedback.html', {
+                'tweets': tweets,
+                'search_term': search_term,
+                'tweets_json': json.dumps(tweets, indent=2)
+            })
+        except requests.exceptions.RequestException as e:
+            messages.error(request, f"API Error: {str(e)}")
+            return render(request, 'extract_feedback.html', {'error': str(e)})
+            
+    return render(request, 'extract_feedback.html')

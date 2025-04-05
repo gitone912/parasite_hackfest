@@ -104,6 +104,21 @@
                                 <span :class="{ 'lg:hidden': !isSidebarOpen }">Create Survey</span>
                             </a>
                         </li>
+                        <li class="mt-6 mb-2">
+                            <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase" :class="{'text-center': !isSidebarOpen}">
+                                Feedback
+                            </div>
+                        </li>
+                        <li>
+                            <a href="{% url 'extract_feedback' %}"
+                                class="flex items-center p-2 space-x-2 rounded-md hover:bg-gray-100 {% if request.GET.type == 'surveys' %}bg-gray-100{% endif %}"
+                                :class="{'justify-center': !isSidebarOpen}">
+                                <span>
+                                    <i class="fas fa-poll w-6 h-6 text-gray-400"></i>
+                                </span>
+                                <span :class="{ 'lg:hidden': !isSidebarOpen }">Sentiment analysis</span>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
                 
@@ -184,7 +199,7 @@
     <script>
         const setup = () => {
             return {
-                isSidebarOpen: false,
+                isSidebarOpen: true,
                 toggleSidbarMenu() {
                     this.isSidebarOpen = !this.isSidebarOpen
                 }
