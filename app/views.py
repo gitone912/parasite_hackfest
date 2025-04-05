@@ -475,3 +475,10 @@ def perform_sentiment_analysis(request, feedback_id):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+@login_required(login_url='/login')
+def crowdDetection(request):
+    return render(request, 'crowdDetection.html')
+
+
+

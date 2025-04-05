@@ -1,0 +1,443 @@
+{% extends 'body.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    canvas {
+        position: absolute;
+        transform: scaleX(-1);
+    }
+    video {
+        transform: scaleX(-1);
+    }
+    #resultsContainer {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 15px;
+    }
+    .timestamp-result {
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Crowd Detection</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Live Webcam Detection</h5>
+                </div>
+                <div class="card-body">
+                    <div id="liveView" class="videoView">
+                        <button id="webcamButton" class="btn btn-primary mb-3" disabled>
+                            ENABLE WEBCAM
+                        </button>
+                        <div style="position: relative;">
+                            <video id="webcam" style="width: 100%; max-width: 640px; height: auto;" autoplay playsinline></video>
+                            <canvas id="output_canvas" style="position: absolute; left: 0px; top: 0px; width: 100%; max-width: 640px; height: auto;"></canvas>
+                        </div>
+                        <div class="mt-3">
+                            <p id="crowdCount" class="alert alert-info">Number of people detected: 0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Upload Video</h5>
+                </div>
+                <div class="card-body">
+                    <form id="videoUploadForm">
+                        <div class="mb-3">
+                            <label for="videoFile" class="form-label">Choose video file</label>
+                            <input type="file" class="form-control" id="videoFile" accept="video/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Analyze (2-second intervals)</button>
+                    </form>
+                    <div id="uploadedVideoContainer" class="mt-3" style="position: relative; display: none;">
+                        <video id="uploadedVideo" style="width: 100%; max-width: 640px; height: auto;" controls></video>
+                        <canvas id="uploaded_output_canvas" style="position: absolute; left: 0px; top: 0px; width: 100%; max-width: 640px; height: auto;"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div id="analysisStatus" class="alert alert-info" style="display: none;">Processing video...</div>
+                        <div id="analysisSummary" class="alert alert-success" style="display: none;"></div>
+                        <div id="resultsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Load MediaPipe dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js" crossorigin="anonymous"></script>
+
+<script type="module">
+  import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+
+  let poseLandmarker = undefined;
+  let runningMode = "IMAGE";
+  let enableWebcamButton;
+  let webcamRunning = false;
+  let lastVideoTime = -1;
+
+  // Initialize MediaPipe pose connections
+  const POSE_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
+    [9, 10], [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
+    [17, 19], [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+    [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28],
+    [27, 29], [28, 30], [29, 31], [30, 32], [27, 31], [28, 32]
+  ];
+
+  // Custom drawing utilities since we're not using the built-in ones
+  const initializeDrawingUtils = (canvasContext) => {
+    return {
+      drawLandmarks: (landmarks, options = {}) => {
+        const ctx = canvasContext;
+        landmarks.forEach(landmark => {
+          ctx.beginPath();
+          ctx.arc(landmark.x * ctx.canvas.width, landmark.y * ctx.canvas.height, 
+                 options.radius || 3, 0, 2 * Math.PI);
+          ctx.fillStyle = options.color || 'red';
+          ctx.fill();
+        });
+      },
+      drawConnectors: (landmarks, connections, options = {}) => {
+        const ctx = canvasContext;
+        connections.forEach(([start, end]) => {
+          if (!landmarks[start] || !landmarks[end]) return; // Skip if landmarks not found
+          
+          ctx.beginPath();
+          ctx.moveTo(landmarks[start].x * ctx.canvas.width, landmarks[start].y * ctx.canvas.height);
+          ctx.lineTo(landmarks[end].x * ctx.canvas.width, landmarks[end].y * ctx.canvas.height);
+          ctx.strokeStyle = options.color || 'white';
+          ctx.lineWidth = options.lineWidth || 2;
+          ctx.stroke();
+        });
+      }
+    };
+  };
+
+  const createPoseLandmarker = async () => {
+    try {
+        console.log('Creating vision...');
+        const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
+        console.log('Vision created, creating PoseLandmarker...');
+        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                delegate: "CPU"
+            },
+            runningMode: runningMode,
+            numPoses: 10
+        });
+        console.log("PoseLandmarker created successfully");
+        if (enableWebcamButton) {
+            enableWebcamButton.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error creating PoseLandmarker:", error);
+    }
+  };
+
+  // Initialize after the module is loaded
+  const initialize = async () => {
+    try {
+        console.log('Initializing...');
+        enableWebcamButton = document.getElementById("webcamButton");
+        if (enableWebcamButton) {
+            enableWebcamButton.addEventListener("click", enableCam);
+        } else {
+            console.error("Webcam button not found");
+        }
+
+        // Setup video upload form
+        const videoUploadForm = document.getElementById('videoUploadForm');
+        if (videoUploadForm) {
+            videoUploadForm.addEventListener('submit', handleVideoUpload);
+        }
+
+        await createPoseLandmarker();
+    } catch (error) {
+        console.error("Error during initialization:", error);
+    }
+  };
+
+  // Wait for the module to load before initializing
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
+
+  function resizeCanvasToMatchVideo(video, canvas) {
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+  }
+
+  // Helper function to format time as MM:SS
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // Webcam handling
+  const video = document.getElementById("webcam");
+  const canvasElement = document.getElementById("output_canvas");
+  const canvasCtx = canvasElement.getContext("2d");
+  const drawingUtils = initializeDrawingUtils(canvasCtx);
+  const crowdCountElement = document.getElementById("crowdCount");
+
+  async function enableCam(event) {
+    try {
+        if (!poseLandmarker) {
+            console.log("Wait! poseLandmarker not loaded yet.");
+            return;
+        }
+
+        if (webcamRunning === true) {
+            webcamRunning = false;
+            enableWebcamButton.innerText = "ENABLE WEBCAM";
+            
+            // Stop all video streams
+            const stream = video.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        } else {
+            webcamRunning = true;
+            enableWebcamButton.innerText = "DISABLE WEBCAM";
+            
+            try {
+                const constraints = {
+                    video: {
+                        width: 640,
+                        height: 480
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.addEventListener("loadeddata", () => {
+                    resizeCanvasToMatchVideo(video, canvasElement);
+                    predictWebcam();
+                });
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+                alert("Error accessing webcam: " + err.message);
+            }
+        }
+    } catch (error) {
+        console.error("Error in enableCam:", error);
+    }
+  }
+
+  async function predictWebcam() {
+    try {
+        if (runningMode === "IMAGE") {
+            runningMode = "VIDEO";
+            await poseLandmarker.setOptions({ runningMode: "VIDEO" });
+        }
+
+        let startTimeMs = performance.now();
+        if (lastVideoTime !== video.currentTime) {
+            lastVideoTime = video.currentTime;
+            const results = await poseLandmarker.detectForVideo(video, startTimeMs);
+            
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // Update crowd count
+            if (results && results.landmarks) {
+                crowdCountElement.textContent = `Number of people detected: ${results.landmarks.length}`;
+                
+                // Draw landmarks for each person
+                for (const landmark of results.landmarks) {
+                    drawingUtils.drawLandmarks(landmark, {
+                        color: 'red',
+                        radius: 3
+                    });
+                    
+                    // Draw connectors using our predefined pose connections
+                    drawingUtils.drawConnectors(landmark, POSE_CONNECTIONS, {
+                        color: 'white',
+                        lineWidth: 2
+                    });
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        if (webcamRunning === true) {
+            window.requestAnimationFrame(predictWebcam);
+        }
+    } catch (error) {
+        console.error("Error in predictWebcam:", error);
+    }
+  }
+
+  // Video upload handling
+  const uploadedVideo = document.getElementById('uploadedVideo');
+  const uploadedCanvasElement = document.getElementById('uploaded_output_canvas');
+  const uploadedCanvasCtx = uploadedCanvasElement.getContext('2d');
+  const uploadedDrawingUtils = initializeDrawingUtils(uploadedCanvasCtx);
+  const analysisStatusElement = document.getElementById('analysisStatus');
+  const analysisSummaryElement = document.getElementById('analysisSummary');
+  const resultsContainerElement = document.getElementById('resultsContainer');
+
+  async function handleVideoUpload(e) {
+    e.preventDefault();
+    try {
+        const fileInput = document.getElementById('videoFile');
+        const file = fileInput.files[0];
+        
+        if (file) {
+            // Reset previous results
+            analysisStatusElement.style.display = 'block';
+            analysisStatusElement.textContent = 'Processing video...';
+            analysisSummaryElement.style.display = 'none';
+            resultsContainerElement.innerHTML = '';
+            
+            // Set up video
+            const videoUrl = URL.createObjectURL(file);
+            uploadedVideo.src = videoUrl;
+            document.getElementById('uploadedVideoContainer').style.display = 'block';
+            
+            uploadedVideo.addEventListener('loadedmetadata', async () => {
+                resizeCanvasToMatchVideo(uploadedVideo, uploadedCanvasElement);
+                
+                // Start analysis once video metadata is loaded
+                await analyzeVideoAtIntervals(uploadedVideo, 2); // 2-second intervals
+            });
+        }
+    } catch (error) {
+        console.error("Error handling video upload:", error);
+        analysisStatusElement.textContent = `Error: ${error.message}`;
+    }
+  }
+
+  async function analyzeVideoAtIntervals(videoElement, intervalSeconds) {
+    try {
+        // Switch to IMAGE mode for better frame capture
+        if (runningMode !== "IMAGE") {
+            runningMode = "IMAGE";
+            await poseLandmarker.setOptions({ runningMode: "IMAGE" });
+        }
+        
+        const duration = videoElement.duration;
+        const results = [];
+        let maxPeopleCount = 0;
+        let maxPeopleTime = 0;
+        
+        // Process the video in chunks
+        for (let currentTime = 0; currentTime < duration; currentTime += intervalSeconds) {
+            // Set video to specific timestamp
+            videoElement.currentTime = currentTime;
+            
+            // Wait for the frame to be loaded
+            await new Promise(resolve => {
+                const seekedHandler = () => {
+                    videoElement.removeEventListener('seeked', seekedHandler);
+                    resolve();
+                };
+                videoElement.addEventListener('seeked', seekedHandler);
+            });
+            
+            // Analyze the current frame
+            const frameResults = await poseLandmarker.detect(videoElement);
+            const peopleCount = frameResults.landmarks.length;
+            
+            // Update max count if needed
+            if (peopleCount > maxPeopleCount) {
+                maxPeopleCount = peopleCount;
+                maxPeopleTime = currentTime;
+            }
+            
+            // Save results
+            results.push({
+                time: currentTime,
+                peopleCount: peopleCount
+            });
+            
+            // Display the current frame's results
+            displayFrameResult(currentTime, peopleCount);
+            
+            // Update status
+            analysisStatusElement.textContent = `Processing... ${Math.min(100, Math.round((currentTime / duration) * 100))}%`;
+            
+            // Draw landmarks on the frame
+            uploadedCanvasCtx.clearRect(0, 0, uploadedCanvasElement.width, uploadedCanvasElement.height);
+            for (const landmark of frameResults.landmarks) {
+                uploadedDrawingUtils.drawLandmarks(landmark, {
+                    color: 'red',
+                    radius: 3
+                });
+                
+                uploadedDrawingUtils.drawConnectors(landmark, POSE_CONNECTIONS, {
+                    color: 'white',
+                    lineWidth: 2
+                });
+            }
+        }
+        
+        // Display final summary
+        analysisStatusElement.style.display = 'none';
+        analysisSummaryElement.style.display = 'block';
+        analysisSummaryElement.innerHTML = `
+            <strong>Analysis Complete:</strong><br>
+            Maximum people detected: ${maxPeopleCount} at ${formatTime(maxPeopleTime)}<br>
+            Average people per frame: ${(results.reduce((sum, r) => sum + r.peopleCount, 0) / results.length).toFixed(1)}<br>
+            Total frames analyzed: ${results.length}
+        `;
+        
+        // Go to the frame with maximum people
+        videoElement.currentTime = maxPeopleTime;
+        
+        return results;
+    } catch (error) {
+        console.error("Error analyzing video:", error);
+        analysisStatusElement.textContent = `Error: ${error.message}`;
+        throw error;
+    }
+  }
+
+  function displayFrameResult(time, peopleCount) {
+    const resultElement = document.createElement('div');
+    resultElement.className = 'timestamp-result';
+    resultElement.innerHTML = `
+        <strong>${formatTime(time)}</strong>: ${peopleCount} ${peopleCount === 1 ? 'person' : 'people'} detected
+    `;
+    
+    // Add click event to jump to this timestamp
+    resultElement.addEventListener('click', () => {
+        uploadedVideo.currentTime = time;
+    });
+    
+    // Add tooltip/cursor to indicate it's clickable
+    resultElement.style.cursor = 'pointer';
+    resultElement.title = 'Click to jump to this timestamp';
+    
+    // Add to results container (at the beginning so newest is at top)
+    resultsContainerElement.prepend(resultElement);
+  }
+</script>
+{% endblock %}

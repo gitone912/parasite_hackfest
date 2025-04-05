@@ -1,3 +1,5 @@
 /app/__pycache__
 /parasite_hackfest/__pycache__
 /app/migrations/__pycache__
+/whatsappBot/node_modules
+/whatsappBot/package-lock.json

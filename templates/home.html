@@ -223,6 +223,16 @@
                                 <span :class="{ 'lg:hidden': !isSidebarOpen }">Sentiment Analysis</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="{% url 'crowd_detection' %}"
+                                class="flex items-center p-3 space-x-2 rounded-md eventra-sidebar-link hover:bg-gray-100 {% if request.GET.type == 'surveys' %}active{% endif %}"
+                                :class="{'justify-center': !isSidebarOpen}">
+                                <span>
+                                    <i class="fas fa-chart-bar w-6 h-6 eventra-sidebar-icon"></i>
+                                </span>
+                                <span :class="{ 'lg:hidden': !isSidebarOpen }">Crowd Detection</span>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
                 
